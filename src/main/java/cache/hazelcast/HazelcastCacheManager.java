@@ -3,8 +3,6 @@
  */
 package cache.hazelcast;
 
-import java.util.Set;
-
 import javax.naming.OperationNotSupportedException;
 
 import cache.BaseCacheManager;
@@ -20,15 +18,13 @@ import com.hazelcast.core.IMap;
 public class HazelcastCacheManager extends BaseCacheManager {
     private HazelcastInstance hazelcastInstance;
 
-    private Set<String> regions;
-    
     public HazelcastInstance getHazelcast() {
         return hazelcastInstance;
     }
 
     public void init() throws Exception {
         hazelcastInstance = Hazelcast.newHazelcastInstance();
-        regions = hazelcastInstance.getSet("regions");
+
     }
 
     public void shutdown() {
@@ -87,9 +83,9 @@ public class HazelcastCacheManager extends BaseCacheManager {
         return false;
     }
 
-    
-    public void clearAll() throws OperationNotSupportedException{
-        throw new OperationNotSupportedException("clearAll not supported for HZ");
+    public void clearAll() throws OperationNotSupportedException {
+        throw new OperationNotSupportedException(
+                "clearAll not supported for HZ");
     }
 
     public void clearRegion(String region) {
