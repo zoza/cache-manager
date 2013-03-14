@@ -3,10 +3,15 @@
  */
 package cache.hazelcast;
 
+import java.util.Set;
+
+import javax.naming.OperationNotSupportedException;
+
 import cache.BaseCacheManager;
 
 import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.core.IMap;
 
 /**
  * @author zoza
@@ -15,12 +20,15 @@ import com.hazelcast.core.HazelcastInstance;
 public class HazelcastCacheManager extends BaseCacheManager {
     private HazelcastInstance hazelcastInstance;
 
+    private Set<String> regions;
+    
     public HazelcastInstance getHazelcast() {
         return hazelcastInstance;
     }
 
-    public void init() throws Exception {                
+    public void init() throws Exception {
         hazelcastInstance = Hazelcast.newHazelcastInstance();
+        regions = hazelcastInstance.getSet("regions");
     }
 
     public void shutdown() {
@@ -28,7 +36,7 @@ public class HazelcastCacheManager extends BaseCacheManager {
     }
 
     public Object get(String region, Object key) {
-        return hazelcastInstance.getMap(region).get(key);
+        return getHazelcastMapByRegion(region).get(key);
     }
 
     public Object get(Object key) {
@@ -41,7 +49,7 @@ public class HazelcastCacheManager extends BaseCacheManager {
     }
 
     public void delete(String region, Object key) {
-        hazelcastInstance.getMap(region).remove(key);
+        getHazelcastMapByRegion(region).remove(key);
 
     }
 
@@ -51,8 +59,48 @@ public class HazelcastCacheManager extends BaseCacheManager {
     }
 
     public void put(String region, Object key, Object value) {
-        hazelcastInstance.getMap(region).put(key, value);
+        getHazelcastMapByRegion(region).put(key, value);
 
+    }
+
+    public Boolean replace(Object key, Object value) {
+        return replace(DEFAULT_REGION, key, value);
+    }
+
+    public Boolean replace(String region, Object key, Object value) {
+        Object replace = getHazelcastMapByRegion(region).replace(key, value);
+        if (replace == null) {
+            return false;
+        }
+        return true;
+    }
+
+    public Boolean putIfAbsent(Object key, Object value) {
+        return putIfAbsent(DEFAULT_REGION, key, value);
+    }
+
+    public Boolean putIfAbsent(String region, Object key, Object value) {
+        Object result = getHazelcastMapByRegion(region).putIfAbsent(key, value);
+        if (result == null) {
+            return true;
+        }
+        return false;
+    }
+
+    
+    public void clearAll() throws OperationNotSupportedException{
+        throw new OperationNotSupportedException("clearAll not supported for HZ");
+    }
+
+    public void clearRegion(String region) {
+        getHazelcastMapByRegion(region).clear();
+    }
+
+    private IMap<Object, Object> getHazelcastMapByRegion(String region) {
+        if (region == null) {
+            throw new NullPointerException("region cant be null");
+        }
+        return hazelcastInstance.getMap(region);
     }
 
 }
