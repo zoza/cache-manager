@@ -19,10 +19,30 @@ import cache.memcache.MemcacheCacheManager;
  * 
  */
 public abstract class BaseTestCache {
-    public String getRandomString() {
+    public static String getRandomString() {
         return UUID.randomUUID().toString();
     }
 
+
+    @Test
+    public void incrementAndGet() {
+        String randomStringKey = getRandomString();
+
+        getCacheManager().incrementAndGet(randomStringKey);
+        getCacheManager().incrementAndGet(randomStringKey);
+        Long long1 = getCacheManager().incrementAndGet(randomStringKey);
+        Assert.assertEquals(Long.valueOf(3), long1);
+    }
+    @Test
+    public void incrementAndGetDelta() {
+        String randomStringKey = getRandomString();
+
+        getCacheManager().incrementAndGet(randomStringKey,10);
+        getCacheManager().incrementAndGet(randomStringKey,2);
+        Long long1 = getCacheManager().incrementAndGet(randomStringKey,8);
+        Assert.assertEquals(Long.valueOf(20), long1);
+    }
+   
     @Test
     public void replacePositive() {
         String randomStringKey = getRandomString();
@@ -79,7 +99,7 @@ public abstract class BaseTestCache {
         Assert.assertEquals(randomStringValue, value);
     }
 
-    @Test(expected=NullPointerException.class)
+    @Test(expected = NullPointerException.class)
     public void regionNull() {
         String randomStringKey = getRandomString();
         String randomStringValue = getRandomString();

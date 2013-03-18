@@ -35,9 +35,51 @@ public interface CacheManager {
 
     public Boolean putIfAbsent(String region, Object key, Object value);
 
+    /**
+     * <b>Clear all data</b></br> Hazelcast back-end is not support this feature
+     * so OperationNotSupportedException throw
+     * 
+     * @throws OperationNotSupportedException
+     */
     public void clearAll() throws OperationNotSupportedException;
 
+    /**
+     * <b>clear region data</b></br> Memcache back-end is not support this
+     * feature so OperationNotSupportedException throw
+     * 
+     * @param region
+     * @throws OperationNotSupportedException
+     */
     public void clearRegion(String region)
             throws OperationNotSupportedException;
+
+//    /**
+//     * Use this method to set initial value of counter for next use of
+//     * incrementAndGet\decrementAndGet otherwise those methods will return null
+//     * if key already exists,
+//     * 
+//     * @param region
+//     * @param key
+//     * @param initValue
+//     * @return if key already exists, nothing happens and false returned,else
+//     *         true returned
+//     */
+//    public boolean initCounter(String region, Object key, long initValue);
+
+    public Long incrementAndGet(String region, Object key);
+
+    public Long incrementAndGet(Object key);
+
+    public Long incrementAndGet(String region, Object key, long delta);
+
+    public Long incrementAndGet(Object key, long delta);
+
+//    public Long decrementAndGet(String region, Object key);
+//
+//    public Long decrementAndGet(Object key);
+//
+//    public Long decrementAndGet(String region, Object key, long delta);
+//
+//    public Long decrementAndGet(Object key, long delta);
 
 }

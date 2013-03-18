@@ -23,9 +23,6 @@ import cache.BaseCacheManager;
  */
 public class MemcacheCacheManager extends BaseCacheManager {
 
-    private static final String KEY_SHOULD_T_BE_NULL = "key should't be null";
-    private static final String KEY_AND_VALUE_SHOULD_T_BE_NULL = "key and value should't be null";
-
     public MemcacheCacheManager() {
         super();
     }
@@ -85,53 +82,38 @@ public class MemcacheCacheManager extends BaseCacheManager {
 
     }
 
-    public Object get(Object key) {
-        return get(DEFAULT_REGION, key);
-    }
-
     public Object get(String region, Object key) {
-        if (key == null) {
-            throw new NullPointerException(KEY_SHOULD_T_BE_NULL);
-        }
-        return memcache.get(region + REGION_DELIMITER + key.toString());
-    }
-
-    public void put(Object key, Object value) {
-        put(DEFAULT_REGION, key, value);
+        return memcache.get(getFullKey(region, key));
     }
 
     public void put(String region, Object key, Object value) {
-        if (key == null || value == null) {
-            throw new NullPointerException(KEY_AND_VALUE_SHOULD_T_BE_NULL);
+        if (value == null) {
+            throw new NullPointerException(VALUE_SHOULDT_BE_NULL);
         }
-
         memcache.set(getFullKey(region, key), getExpirationByRegion(region),
                 value);
     }
 
-    public void delete(Object key) {
-        delete(DEFAULT_REGION, key);
-    }
-
     public void delete(String region, Object key) {
-        if (key == null) {
-            throw new NullPointerException();
-        }
         memcache.delete(getFullKey(region, key));
-
     }
 
     public void clearAll() {
         memcache.flush();
     }
 
-    public void clearRegion(String region) throws OperationNotSupportedException {
-        throw new OperationNotSupportedException("clearRegion not supported for Memcache");
+    public void clearRegion(String region)
+            throws OperationNotSupportedException {
+        throw new OperationNotSupportedException(
+                "clearRegion not supported for Memcache");
     }
 
     private String getFullKey(String region, Object key) {
         if (region == null) {
-            throw new NullPointerException("region cant be null");
+            throw new NullPointerException(REGION_CANT_BE_NULL);
+        }
+        if (key == null) {
+            throw new NullPointerException(KEY_SHOULDT_BE_NULL);
         }
         return region + REGION_DELIMITER + key;
     }
@@ -148,13 +130,9 @@ public class MemcacheCacheManager extends BaseCacheManager {
         return Integer.parseInt(ttl);
     }
 
-    public Boolean replace(Object key, Object value) {
-        return replace(DEFAULT_REGION, key, value);
-    }
-
     public Boolean replace(String region, Object key, Object value) {
-        if (key == null || value == null) {
-            throw new NullPointerException(KEY_AND_VALUE_SHOULD_T_BE_NULL);
+        if (value == null) {
+            throw new NullPointerException(VALUE_SHOULDT_BE_NULL);
         }
         Boolean result = null;
         OperationFuture<Boolean> future = memcache.replace(
@@ -167,11 +145,10 @@ public class MemcacheCacheManager extends BaseCacheManager {
         return result;
     }
 
-    public Boolean putIfAbsent(Object key, Object value) {
-        return putIfAbsent(DEFAULT_REGION, key, value);
-    }
-
     public Boolean putIfAbsent(String region, Object key, Object value) {
+        if (value == null) {
+            throw new NullPointerException(VALUE_SHOULDT_BE_NULL);
+        }
         Boolean result = null;
         OperationFuture<Boolean> future = memcache.add(getFullKey(region, key),
                 getExpirationByRegion(region), value);
@@ -179,6 +156,27 @@ public class MemcacheCacheManager extends BaseCacheManager {
             result = future.get(timeout, TimeUnit.MILLISECONDS);
         } catch (Exception e) {
             future.cancel();
+        }
+        return result;
+    }
+
+    @Override
+    protected Long atomicAndGet(String region, Object key, long delta) {
+        Long result = null;
+        if (delta <= 0) {
+            throw new IllegalArgumentException(DELTA_MUST_BE_POSITIVE);
+        }
+        if (key == null) {
+            throw new NullPointerException(KEY_SHOULDT_BE_NULL);
+        }
+        //this line is adding default init value if its not exists yet
+        memcache.add(getFullKey(region, key), getExpirationByRegion(region),
+                "0");
+        result = memcache.incr(getFullKey(region, key), delta, 0,
+                getExpirationByRegion(region));
+
+        if (result == -1) {
+            return null;
         }
         return result;
     }

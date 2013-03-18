@@ -7,6 +7,7 @@ import javax.naming.OperationNotSupportedException;
 
 import cache.BaseCacheManager;
 
+import com.hazelcast.core.AtomicNumber;
 import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IMap;
@@ -17,7 +18,6 @@ import com.hazelcast.core.IMap;
  */
 public class HazelcastCacheManager extends BaseCacheManager {
     private HazelcastInstance hazelcastInstance;
-
 
     public HazelcastInstance getHazelcast() {
         return hazelcastInstance;
@@ -36,10 +36,12 @@ public class HazelcastCacheManager extends BaseCacheManager {
         return getHazelcastMapByRegion(region).get(key);
     }
 
+    @Override
     public Object get(Object key) {
         return get(DEFAULT_REGION, key);
     }
 
+    @Override
     public void delete(Object key) {
         delete(DEFAULT_REGION, key);
 
@@ -50,6 +52,7 @@ public class HazelcastCacheManager extends BaseCacheManager {
 
     }
 
+    @Override
     public void put(Object key, Object value) {
         put(DEFAULT_REGION, key, value);
 
@@ -60,6 +63,7 @@ public class HazelcastCacheManager extends BaseCacheManager {
 
     }
 
+    @Override
     public Boolean replace(Object key, Object value) {
         return replace(DEFAULT_REGION, key, value);
     }
@@ -72,6 +76,7 @@ public class HazelcastCacheManager extends BaseCacheManager {
         return true;
     }
 
+    @Override
     public Boolean putIfAbsent(Object key, Object value) {
         return putIfAbsent(DEFAULT_REGION, key, value);
     }
@@ -96,9 +101,25 @@ public class HazelcastCacheManager extends BaseCacheManager {
 
     private IMap<Object, Object> getHazelcastMapByRegion(String region) {
         if (region == null) {
-            throw new NullPointerException("region cant be null");
+            throw new NullPointerException(REGION_CANT_BE_NULL);
         }
         return hazelcastInstance.getMap(region);
+    }
+
+    @Override
+    protected Long atomicAndGet(String region, Object key, long delta) {
+        if (region == null) {
+            throw new NullPointerException(REGION_CANT_BE_NULL);
+        }
+        if (delta <= 0) {
+            throw new IllegalArgumentException(DELTA_MUST_BE_POSITIVE);
+        }
+        if (key == null) {
+            throw new NullPointerException(KEY_SHOULDT_BE_NULL);
+        }
+        AtomicNumber atomicNumber = hazelcastInstance.getAtomicNumber(region
+                + "." + key);
+        return atomicNumber.addAndGet(delta);
     }
 
 }

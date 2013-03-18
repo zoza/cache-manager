@@ -13,6 +13,7 @@ import cache.BaseCacheManager;
  * 
  */
 public class EhCacheCacheManager extends BaseCacheManager {
+
     private CacheManager ehcache = null;
 
     public CacheManager getEhCache() {
@@ -28,22 +29,13 @@ public class EhCacheCacheManager extends BaseCacheManager {
         ehcache = null;
     }
 
-    public Object get(Object key) {
-        return get(DEFAULT_REGION, key);
-    }
-
     public Object get(String region, Object key) {
         Ehcache cache = getEhcacheByRegion(region);
         Element element = cache.get(key);
         if (element != null) {
             return element.getObjectValue();
         }
-
         return null;
-    }
-
-    public void delete(Object key) {
-        delete(DEFAULT_REGION, key);
     }
 
     public void delete(String region, Object key) {
@@ -51,17 +43,9 @@ public class EhCacheCacheManager extends BaseCacheManager {
         cache.remove(key);
     }
 
-    public void put(Object key, Object value) {
-        put(DEFAULT_REGION, key, value);
-    }
-
     public void put(String region, Object key, Object value) {
         Ehcache cache = getEhcacheByRegion(region);
         cache.put(new Element(key, value));
-    }
-
-    public Boolean replace(Object key, Object value) {
-        return replace(DEFAULT_REGION, key, value);
     }
 
     public Boolean replace(String region, Object key, Object value) {
@@ -71,10 +55,6 @@ public class EhCacheCacheManager extends BaseCacheManager {
             return false;
         }
         return true;
-    }
-
-    public Boolean putIfAbsent(Object key, Object value) {
-        return putIfAbsent(DEFAULT_REGION, key, value);
     }
 
     public Boolean putIfAbsent(String region, Object key, Object value) {
@@ -96,9 +76,8 @@ public class EhCacheCacheManager extends BaseCacheManager {
     }
 
     private Ehcache getEhcacheByRegion(String region) {
-
         if (region == null) {
-            throw new NullPointerException("region cant be null");
+            throw new NullPointerException(REGION_CANT_BE_NULL);
         }
 
         Ehcache cache = ehcache.getEhcache(region);
@@ -106,8 +85,29 @@ public class EhCacheCacheManager extends BaseCacheManager {
             ehcache.addCache(region);
             cache = ehcache.getEhcache(region);
         }
-
         return cache;
     }
 
+    @Override
+    protected synchronized Long atomicAndGet(String region,
+                                             Object key,
+                                             long delta) {
+        if (delta <= 0) {
+            throw new IllegalArgumentException(DELTA_MUST_BE_POSITIVE);
+        }
+        if (key == null) {
+            throw new NullPointerException(KEY_SHOULDT_BE_NULL);
+        }
+
+        Ehcache cache = getEhcacheByRegion(region);
+        Long oldValue = (Long) get(region, key);
+        if (oldValue == null) {
+            oldValue = 0L;
+        }
+
+        Long newValue = oldValue + delta;
+        cache.put(new Element(key, newValue));
+        return newValue;
+
+    }
 }
