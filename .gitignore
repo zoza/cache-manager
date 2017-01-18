@@ -5,3 +5,7 @@ test-output
 *.jar
 *.war
 *.ear
+#eclipse
+.classpath
+.project
+.settings
